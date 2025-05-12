@@ -1,0 +1,45 @@
+{% extends 'generator/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="result-card">
+    <h2><i class="fas fa-lock"></i> Here is Your Secure Password</h2>
+    
+    <div class="password-display" id="passwordOutput">
+        {{ password }}
+    </div>
+    
+    <div class="param-details">
+        <h5><i class="fas fa-cog"></i> Generation Parameters:</h5>
+        <ul class="param-list">
+            <li>Length: {{ params.length }} characters</li>
+            <li>Uppercase: {% if params.uppercase %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</li>
+            <li>Lowercase: {% if params.lowercase %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</li>
+            <li>Numbers: {% if params.digits %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</li>
+            <li>Special Characters: {% if params.special %}<i class="fas fa-check text-success"></i>{% else %}<i class="fas fa-times text-danger"></i>{% endif %}</li>
+        </ul>
+    </div>
+    
+    <div class="action-buttons">
+        <button onclick="copyPassword()" class="btn btn-success">
+            <i class="fas fa-copy"></i> Copy Password
+        </button>
+        <a href="{% url 'password_requirements' %}" class="btn btn-outline-primary">
+            <i class="fas fa-redo"></i> Generate Another
+        </a>
+    </div>
+</div>
+
+<script>
+    function copyPassword() {
+        navigator.clipboard.writeText("{{ password }}")
+            .then(() => {
+                const btn = document.querySelector('.btn-success');
+                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="fas fa-copy"></i> Copy Password';
+                }, 2000);
+            });
+    }
+</script>
+{% endblock %}

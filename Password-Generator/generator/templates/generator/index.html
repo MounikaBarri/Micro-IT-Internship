@@ -1,0 +1,14 @@
+{% extends 'generator/base.html' %}
+
+{% block content %}
+
+<h1 class="mb-4">🔒 Secure Password Generator</h1>
+<form id="passwordForm">
+    {% csrf_token %}
+    <!-- Form elements here -->
+</form>
+{% endblock %}
+
+{% block js %}
+<script src="/static/js/script.js"></script>
+{% endblock %}
