@@ -1,0 +1,148 @@
+{% extends "calculator/base.html" %}
+
+{% block content %}
+<div class="calculator-container">
+    <div class="calculator-header">
+        <h2><i class="fas fa-calculator me-2"></i>Django Calculator</h2>
+    </div>
+    <input type="text" class="calculator-display" id="display" readonly>
+    <div class="calculator-buttons">
+        <button class="btn-calc btn-clear" onclick="clearDisplay()">C</button>
+        <button class="btn-calc" onclick="backspace()"><i class="fas fa-backspace"></i></button>
+        <button class="btn-calc" onclick="appendToDisplay('%')">%</button>
+        <button class="btn-calc btn-operator" onclick="appendToDisplay('/')">/</button>
+        
+        <button class="btn-calc btn-number" onclick="appendToDisplay('7')">7</button>
+        <button class="btn-calc btn-number" onclick="appendToDisplay('8')">8</button>
+        <button class="btn-calc btn-number" onclick="appendToDisplay('9')">9</button>
+        <button class="btn-calc btn-operator" onclick="appendToDisplay('*')">×</button>
+        
+        <button class="btn-calc btn-number" onclick="appendToDisplay('4')">4</button>
+        <button class="btn-calc btn-number" onclick="appendToDisplay('5')">5</button>
+        <button class="btn-calc btn-number" onclick="appendToDisplay('6')">6</button>
+        <button class="btn-calc btn-operator" onclick="appendToDisplay('-')">-</button>
+        
+        <button class="btn-calc btn-number" onclick="appendToDisplay('1')">1</button>
+        <button class="btn-calc btn-number" onclick="appendToDisplay('2')">2</button>
+        <button class="btn-calc btn-number" onclick="appendToDisplay('3')">3</button>
+        <button class="btn-calc btn-operator" onclick="appendToDisplay('+')">+</button>
+        
+        <button class="btn-calc btn-number span-2" onclick="appendToDisplay('0')">0</button>
+        <button class="btn-calc btn-number" onclick="appendToDisplay('.')">.</button>
+        <button class="btn-calc btn-equals" onclick="calculate()">=</button>
+    </div>
+    <div class="calculator-history">
+        <div class="history-title">History</div>
+        <div id="history-items"></div>
+    </div>
+</div>
+
+<script>
+    const display = document.getElementById('display');
+    const historyItems = document.getElementById('history-items');
+    let currentInput = '';
+    
+    // Load history when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        fetch('/history/')
+            .then(response => response.json())
+            .then(data => {
+                updateHistory(data.history);
+            });
+    });
+    
+    function appendToDisplay(value) {
+        currentInput += value;
+        display.value = currentInput;
+    }
+    
+    function clearDisplay() {
+        currentInput = '';
+        display.value = '';
+    }
+    
+    function backspace() {
+        currentInput = currentInput.slice(0, -1);
+        display.value = currentInput;
+    }
+    
+    function calculate() {
+        if (!currentInput) return;
+        
+        fetch('/calculate/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({expression: currentInput})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                display.value = 'Error';
+                currentInput = '';
+            } else {
+                display.value = data.result;
+                currentInput = data.result;
+                
+                // Refresh history
+                fetch('/history/')
+                    .then(response => response.json())
+                    .then(data => {
+                        updateHistory(data.history);
+                    });
+            }
+        })
+        .catch(error => {
+            display.value = 'Error';
+            currentInput = '';
+        });
+    }
+    
+    function updateHistory(history) {
+        historyItems.innerHTML = '';
+        history.forEach(item => {
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            historyItem.textContent = `${item.expression} = ${item.result}`;
+            historyItem.onclick = function() {
+                currentInput = item.expression;
+                display.value = currentInput;
+            };
+            historyItems.appendChild(historyItem);
+        });
+    }
+    
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Keyboard support
+    document.addEventListener('keydown', function(event) {
+        const key = event.key;
+        
+        if (/[0-9+\-*/.%]/.test(key)) {
+            appendToDisplay(key);
+        } else if (key === 'Enter') {
+            calculate();
+        } else if (key === 'Escape') {
+            clearDisplay();
+        } else if (key === 'Backspace') {
+            backspace();
+        }
+    });
+</script>
+{% endblock %}
